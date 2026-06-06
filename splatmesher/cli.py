@@ -20,7 +20,11 @@ import time
 from splatmesher.color import transfer_colors
 from splatmesher.export import export_obj
 from splatmesher.field import build_density_grid
-from splatmesher.gaussian import filter_gaussians
+from splatmesher.gaussian import (
+    filter_gaussians,
+    filter_support_surface,
+    should_filter_support_surface,
+)
 from splatmesher.io_ply import load_gaussians
 from splatmesher.postprocess import postprocess
 from splatmesher.surface import extract_surface
@@ -41,13 +45,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--resolution",
         type=int,
-        default=256,
+        default=160,
         help="Voxels along the longest axis (mesh detail vs. time/memory).",
     )
     p.add_argument(
         "--iso",
         type=float,
-        default=0.2,
+        default=0.10,
         help="Iso-level as a fraction of the field maximum, in (0, 1).",
     )
     p.add_argument(
@@ -65,8 +69,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--outlier-std",
         type=float,
-        default=2.0,
-        help="Floater removal aggressiveness (0 disables).",
+        default=0.0,
+        help="Floater removal aggressiveness (0 disables; 2+ can break some scans).",
     )
     p.add_argument(
         "--smooth",
@@ -79,6 +83,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=int,
         default=0,
         help="Decimate to this many faces (0 disables).",
+    )
+    p.add_argument(
+        "--no-support-filter",
+        action="store_true",
+        help="Skip automatic removal of flat table/support surface splats.",
     )
     p.add_argument(
         "--no-color",
@@ -124,6 +133,10 @@ def convert(args: argparse.Namespace) -> None:
         min_opacity=args.min_opacity,
         outlier_std_ratio=args.outlier_std,
     )
+    if not args.no_support_filter and should_filter_support_surface(gaussians):
+        before = len(gaussians)
+        gaussians = filter_support_surface(gaussians)
+        log(f"  removed {before - len(gaussians)} support-surface Gaussians")
     log(f"  {len(gaussians)} Gaussians after cleanup")
 
     log(f"Building density grid (resolution={args.resolution})")
