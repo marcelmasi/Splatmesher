@@ -104,3 +104,65 @@ class Gaussians:
             Tuple (min_xyz, max_xyz), each an array of shape (3,) in world units.
         """
         return self.means.min(axis=0), self.means.max(axis=0)
+
+    def select(self, mask: np.ndarray) -> "Gaussians":
+        """Return a subset of the Gaussians selected by a boolean/index mask.
+
+        Args:
+            mask: Boolean array (N,) or an integer index array selecting which
+                Gaussians to keep.
+
+        Returns:
+            A new :class:`Gaussians` containing only the selected primitives.
+        """
+        return Gaussians(
+            means=self.means[mask],
+            scales=self.scales[mask],
+            quats=self.quats[mask],
+            opacities=self.opacities[mask],
+            colors=self.colors[mask],
+        )
+
+
+def filter_gaussians(
+    gaussians: Gaussians,
+    min_opacity: float = 0.1,
+    outlier_neighbors: int = 16,
+    outlier_std_ratio: float = 2.0,
+) -> Gaussians:
+    """Remove transparent Gaussians and spatial floaters/outliers.
+
+    The cleanup first drops low-opacity Gaussians, then performs statistical
+    outlier removal: a Gaussian is discarded if its mean distance to its
+    nearest neighbors is far above the global average (a floater in empty space).
+
+    Args:
+        gaussians: The input Gaussians to filter.
+        min_opacity: Gaussians with opacity below this are removed; set to 0 to
+            disable opacity filtering.
+        outlier_neighbors: Number of nearest neighbors used to estimate local
+            density for outlier removal.
+        outlier_std_ratio: A Gaussian is an outlier if its mean neighbor
+            distance exceeds ``global_mean + ratio * global_std``. Set to 0 to
+            disable outlier removal.
+
+    Returns:
+        A new :class:`Gaussians` with the surviving primitives.
+    """
+    from scipy.spatial import cKDTree
+
+    g = gaussians
+    if min_opacity > 0.0:
+        g = g.select(g.opacities >= min_opacity)
+    if len(g) == 0:
+        return g
+
+    if outlier_std_ratio > 0.0 and len(g) > outlier_neighbors + 1:
+        tree = cKDTree(g.means)
+        k = outlier_neighbors + 1  # include the point itself
+        dists, _ = tree.query(g.means, k=k)
+        mean_dist = dists[:, 1:].mean(axis=1)
+        threshold = mean_dist.mean() + outlier_std_ratio * mean_dist.std()
+        g = g.select(mean_dist <= threshold)
+
+    return g
