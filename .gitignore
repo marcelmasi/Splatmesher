@@ -219,3 +219,6 @@ __marimo__/
 
 # Mesh files
 Examples/
+
+# Apple files
+.DS_Store
