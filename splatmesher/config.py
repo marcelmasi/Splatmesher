@@ -25,10 +25,12 @@ class ConvertConfig:
             field before marching cubes (0 disables).
         max_scale_ratio: Drop Gaussians whose largest axis exceeds this multiple
             of the median scale (0 disables).
+        morph_close_iters: Binary morphological closing iterations on a coarse
+            density mask before extraction; bridges small gaps (0 disables).
     """
 
     resolution: int = 128
-    iso: float = 0.18
+    iso: float = 0.12
     sigma_cutoff: float = 3.0
     min_opacity: float = 0.1
     outlier_std: float = 2.0
@@ -39,6 +41,7 @@ class ConvertConfig:
     robust_bounds: bool = True
     field_blur_sigma: float = 0.0
     max_scale_ratio: float = 0.0
+    morph_close_iters: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize the config to a plain dictionary.

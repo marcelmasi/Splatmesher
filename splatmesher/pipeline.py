@@ -68,6 +68,7 @@ def convert_to_mesh(
         sigma_cutoff=cfg.sigma_cutoff,
         robust_bounds=cfg.robust_bounds,
         blur_sigma=cfg.field_blur_sigma,
+        morph_close_iters=cfg.morph_close_iters,
     )
     verts, faces = extract_surface(grid, iso_relative=cfg.iso)
     mesh = postprocess(
