@@ -37,13 +37,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--resolution",
         type=int,
-        default=256,
+        default=160,
         help="Voxels along the longest axis (mesh detail vs. time/memory).",
     )
     p.add_argument(
         "--iso",
         type=float,
-        default=0.2,
+        default=0.10,
         help="Iso-level as a fraction of the field maximum, in (0, 1).",
     )
     p.add_argument(
@@ -61,8 +61,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--outlier-std",
         type=float,
-        default=2.0,
-        help="Floater removal aggressiveness (0 disables).",
+        default=0.0,
+        help="Floater removal aggressiveness (0 disables; 2+ can break some scans).",
     )
     p.add_argument(
         "--smooth",
@@ -105,6 +105,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Drop Gaussians with axis scale above median * ratio (0 disables).",
     )
     p.add_argument(
+        "--morph-close",
+        type=int,
+        default=0,
+        help="Morphological closing iterations on the density field (0 disables).",
+    )
+    p.add_argument(
+        "--no-support-filter",
+        action="store_true",
+        help="Skip automatic removal of flat table/support surface splats.",
+    )
+    p.add_argument(
         "--no-color",
         action="store_true",
         help="Skip per-vertex color transfer.",
@@ -139,6 +150,8 @@ def args_to_config(args: argparse.Namespace) -> ConvertConfig:
         robust_bounds=args.robust_bounds,
         field_blur_sigma=args.field_blur,
         max_scale_ratio=args.max_scale_ratio,
+        morph_close_iters=args.morph_close,
+        filter_support=not args.no_support_filter,
     )
 
 

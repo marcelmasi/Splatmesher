@@ -166,3 +166,63 @@ def filter_gaussians(
         g = g.select(mean_dist <= threshold)
 
     return g
+
+
+def filter_support_surface(
+    gaussians: Gaussians,
+    flat_aniso_threshold: float = 0.15,
+    bottom_percentile: float = 35.0,
+) -> Gaussians:
+    """Remove flat splats that likely belong to a table or support surface.
+
+    Scans often include a horizontal sheet of flat Gaussians beneath the object
+    (the surface the object was sitting on). These merge with the object in the
+    density field and produce a broken mesh. This filter drops Gaussians that
+    are very flat (pancake-shaped) or that are both flat-ish and in the lower
+    portion of the scene.
+
+    Args:
+        gaussians: Input Gaussians after opacity/outlier filtering.
+        flat_aniso_threshold: Gaussians with min_scale/max_scale below this are
+            treated as flat splats and removed.
+        bottom_percentile: Y-coordinate percentile defining the lower part of
+            the scene where flat-ish splats are also removed.
+
+    Returns:
+        Filtered :class:`Gaussians` with support-surface splats removed.
+    """
+    if len(gaussians) == 0:
+        return gaussians
+
+    aniso = gaussians.scales.min(axis=1) / np.maximum(
+        gaussians.scales.max(axis=1), 1e-9
+    )
+    y_cut = float(np.percentile(gaussians.means[:, 1], bottom_percentile))
+    is_support = (aniso < flat_aniso_threshold) | (
+        (gaussians.means[:, 1] < y_cut) & (aniso < 0.25)
+    )
+    return gaussians.select(~is_support)
+
+
+def should_filter_support_surface(gaussians: Gaussians) -> bool:
+    """Detect whether a scan likely contains a table/support surface to remove.
+
+    Args:
+        gaussians: Gaussians after basic opacity filtering.
+
+    Returns:
+        True if a substantial fraction of flat splats sit in the lower part of
+        the scene, suggesting a support surface is present.
+    """
+    if len(gaussians) == 0:
+        return False
+
+    aniso = gaussians.scales.min(axis=1) / np.maximum(
+        gaussians.scales.max(axis=1), 1e-9
+    )
+    lo, hi = gaussians.bounds()
+    y = gaussians.means[:, 1]
+    flat = aniso < 0.15
+    bottom = y < lo[1] + 0.4 * (hi[1] - lo[1])
+    flat_bottom_frac = float(np.count_nonzero(flat & bottom)) / len(gaussians)
+    return flat_bottom_frac > 0.08
