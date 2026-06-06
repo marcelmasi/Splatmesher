@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+When writing python code, make sure to always use type hinting. Also comment each function with what it does and give description to all input and output variables. In the variable descriptions, write what is important to know, e.g. not just "dept   depth of the pixel" but rather "dept   depth of the pixel in meter".
