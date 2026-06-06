@@ -37,7 +37,7 @@ class ConvertConfig:
     smooth: int = 10
     target_faces: int = 0
     min_face_fraction: float = 0.02
-    keep_largest_only: bool = True
+    keep_largest_only: bool = False
     robust_bounds: bool = True
     field_blur_sigma: float = 0.0
     max_scale_ratio: float = 0.0

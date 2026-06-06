@@ -9,24 +9,24 @@
     "target_faces": 0,
     "min_face_fraction": 0.02,
     "keep_largest_only": false,
-    "robust_bounds": true,
+    "robust_bounds": false,
     "field_blur_sigma": 0.0,
     "max_scale_ratio": 0.0,
     "morph_close_iters": 0
   },
-  "l1_error": 0.16985065266489985,
+  "l1_error": 0.15630317032337188,
   "per_view_l1": {
-    "top": 0.12056761234998703,
-    "left": 0.1656608134508133,
-    "right": 0.10476385056972504,
-    "front": 0.15135535597801208,
-    "back": 0.12049202620983124
+    "top": 0.11951609700918198,
+    "left": 0.16393615305423737,
+    "right": 0.10305710881948471,
+    "front": 0.14630599319934845,
+    "back": 0.11914737522602081
   },
   "stats": {
     "num_components": 1,
     "main_component_fraction": 1.0,
-    "watertight": false,
-    "num_vertices": 71051,
-    "num_faces": 142322
+    "watertight": true,
+    "num_vertices": 59691,
+    "num_faces": 119974
   }
 }
