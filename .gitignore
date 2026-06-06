@@ -220,5 +220,8 @@ __marimo__/
 # Mesh files
 Examples/
 
+# Debug renderings
+debug_renders/
+
 # Apple files
 .DS_Store
