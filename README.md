@@ -12,3 +12,6 @@ TODO
 
 ### Implementation
 TODO
+
+### Evaluation
+For evaluation of the algorithm, there are some example meshes in the Examples folder which can be rendered from random viewpoints and then compared to rendering the mesh from the same view. The average pixel color difference (L1 difference) is the error to be minimized.
