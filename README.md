@@ -2,7 +2,40 @@
 Splatmesher is a conversion tool that takes in a Gaussian Splatting file and creates a mesh out of it. The idea is that you can take something that you scanned with a Gaussian Splatting application and convert it to a proper mesh that you can print out on your 3D printer.
 
 ## Usage
+
+Create and activate the Python environment once per terminal session:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+On Windows (PowerShell):
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Then convert a Gaussian Splatting scan to a mesh:
+
+```bash
 python splatmesher.py myscan.ply output.obj
+```
+
+Example with one of the included scans:
+
+```bash
+python splatmesher.py Examples/FrangipaniCropped.ply output.obj
+```
+
+To leave the environment when you are done:
+
+```bash
+deactivate
+```
 
 ## How it is done
 The general idea is that each Gaussian is approximated by an ellipsoid. Then it constructs a mesh from merging these ellipsoids.
