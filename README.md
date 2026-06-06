@@ -1,4 +1,7 @@
 # Splatmesher
+
+![image](Splatmesher.png)
+
 Splatmesher is a conversion tool that takes in a Gaussian Splatting file and creates a mesh out of it. The idea is that you can take something that you scanned with a Gaussian Splatting application and convert it to a proper mesh that you can print out on your 3D printer.
 
 ## Usage
