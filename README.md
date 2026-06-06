@@ -14,4 +14,7 @@ TODO
 TODO
 
 ### Evaluation
-For evaluation of the algorithm, there are some example meshes in the Examples folder which can be rendered from random viewpoints and then compared to rendering the mesh from the same view. The average pixel color difference (L1 difference) is the error to be minimized.
+For evaluation of the algorithm, there are some example meshes in the Examples folder which can be rendered from 5 fixed viewpoints (top, left, right, front, back) and then compared to rendering the mesh from the same view. The average pixel color difference (L1 difference) is the error to be minimized.
+
+### Method for Optimizing the Algorithm
+To get the best algorithm, it can be optimized using the Evaluation: try out an idea for improvement, evaluate it and compare it to the current baseline. If it is better, commit it to git. You have to think a bit out of the box and try many different ideas.
