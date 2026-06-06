@@ -19,6 +19,7 @@ def render_mesh(
     base_color: tuple[float, float, float] = (0.7, 0.7, 0.7),
     background: tuple[float, float, float] = (1.0, 1.0, 1.0),
     ambient: float = 0.25,
+    vertex_colors: np.ndarray | None = None,
 ) -> np.ndarray:
     """Render a triangle mesh to an RGB image with a z-buffer.
 
@@ -26,9 +27,12 @@ def render_mesh(
         vertices: Array (V, 3) of vertex positions in world units.
         faces: Array (F, 3) of vertex indices (one triangle per row).
         camera: The camera defining the viewpoint and intrinsics.
-        base_color: Diffuse RGB albedo in [0, 1] applied to all faces.
+        base_color: Diffuse RGB albedo in [0, 1] applied to all faces when no
+            per-vertex colors are supplied.
         background: Background RGB color in [0, 1] where no triangle is hit.
         ambient: Ambient light term in [0, 1] added to the diffuse shading.
+        vertex_colors: Optional array (V, 3) float in [0, 1] or (V, 4) uint8 RGBA.
+            When given, colors are barycentrically interpolated without lighting.
 
     Returns:
         Array (H, W, 3) of float32 RGB values in [0, 1].
@@ -44,6 +48,13 @@ def render_mesh(
     uv, depth = camera.project(verts_cam)
 
     base = np.asarray(base_color, dtype=np.float64)
+    vcols: np.ndarray | None = None
+    if vertex_colors is not None:
+        vc = np.asarray(vertex_colors)
+        if vc.dtype == np.uint8:
+            vcols = vc[:, :3].astype(np.float64) / 255.0
+        else:
+            vcols = vc[:, :3].astype(np.float64)
 
     for tri in faces:
         cam_pts = verts_cam[tri]
@@ -86,23 +97,31 @@ def render_mesh(
 
         frag_z = l0 * z[0] + l1 * z[1] + l2 * z[2]
 
-        # Flat shading: world-space face normal lit by a headlight at the eye.
-        v0, v1, v2 = vertices[tri]
-        normal = np.cross(v1 - v0, v2 - v0)
-        norm_len = np.linalg.norm(normal)
-        if norm_len < 1e-12:
-            continue
-        normal /= norm_len
-        centroid = (v0 + v1 + v2) / 3.0
-        light_dir = camera.eye - centroid
-        light_dir /= np.linalg.norm(light_dir) + 1e-12
-        intensity = ambient + (1.0 - ambient) * abs(float(np.dot(normal, light_dir)))
-        shade = np.clip(base * intensity, 0.0, 1.0)
+        if vcols is not None:
+            c0, c1, c2 = vcols[tri[0]], vcols[tri[1]], vcols[tri[2]]
+            shade = (
+                l0[..., None] * c0
+                + l1[..., None] * c1
+                + l2[..., None] * c2
+            )
+        else:
+            # Flat shading: world-space face normal lit by a headlight at the eye.
+            v0, v1, v2 = vertices[tri]
+            normal = np.cross(v1 - v0, v2 - v0)
+            norm_len = np.linalg.norm(normal)
+            if norm_len < 1e-12:
+                continue
+            normal /= norm_len
+            centroid = (v0 + v1 + v2) / 3.0
+            light_dir = camera.eye - centroid
+            light_dir /= np.linalg.norm(light_dir) + 1e-12
+            intensity = ambient + (1.0 - ambient) * abs(float(np.dot(normal, light_dir)))
+            shade = np.clip(base * intensity, 0.0, 1.0)
 
         sub_z = zbuffer[y_min : y_max + 1, x_min : x_max + 1]
         update = inside & (frag_z < sub_z)
         sub_z[update] = frag_z[update]
         sub_img = image[y_min : y_max + 1, x_min : x_max + 1, :]
-        sub_img[update] = shade
+        sub_img[update] = shade[update] if vcols is not None else shade
 
     return np.clip(image, 0.0, 1.0).astype(np.float32)

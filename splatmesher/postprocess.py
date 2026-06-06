@@ -2,8 +2,45 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 import trimesh
+
+
+@dataclass
+class ComponentStats:
+    """Connected-component statistics for a triangle mesh.
+
+    Attributes:
+        num_components: Number of disconnected mesh pieces.
+        main_component_fraction: Fraction of faces belonging to the largest piece.
+        face_counts: Face count per component, largest first.
+    """
+
+    num_components: int
+    main_component_fraction: float
+    face_counts: list[int]
+
+
+def mesh_component_stats(mesh: trimesh.Trimesh) -> ComponentStats:
+    """Measure how fragmented a mesh is.
+
+    Args:
+        mesh: Input mesh to analyze.
+
+    Returns:
+        :class:`ComponentStats` describing connected components.
+    """
+    components = mesh.split(only_watertight=False)
+    face_counts = sorted((len(c.faces) for c in components), reverse=True)
+    total = max(sum(face_counts), 1)
+    main_frac = face_counts[0] / total if face_counts else 0.0
+    return ComponentStats(
+        num_components=len(components),
+        main_component_fraction=float(main_frac),
+        face_counts=face_counts,
+    )
 
 
 def keep_largest_components(
@@ -101,7 +138,7 @@ def postprocess(
     smooth_iterations: int = 10,
     target_faces: int = 0,
     min_face_fraction: float = 0.02,
-    keep_largest_only: bool = True,
+    keep_largest_only: bool = False,
 ) -> trimesh.Trimesh:
     """Run the full post-processing chain on a raw marching-cubes mesh.
 

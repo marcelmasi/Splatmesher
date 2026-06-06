@@ -8,6 +8,24 @@ from scipy.spatial import cKDTree
 from .gaussian import Gaussians
 
 
+def _inverse_covariances(covariances: np.ndarray) -> np.ndarray:
+    """Invert a batch of 3x3 covariance matrices.
+
+    Args:
+        covariances: Array (N, 3, 3) of covariance matrices.
+
+    Returns:
+        Array (N, 3, 3) of inverses; singular matrices are replaced with zeros.
+    """
+    inv = np.empty_like(covariances)
+    for i, cov in enumerate(covariances):
+        try:
+            inv[i] = np.linalg.inv(cov)
+        except np.linalg.LinAlgError:
+            inv[i] = 0.0
+    return inv
+
+
 def transfer_colors(
     vertices: np.ndarray,
     gaussians: Gaussians,
@@ -34,28 +52,18 @@ def transfer_colors(
     if k_eff == 1:
         idx = idx[:, None]
 
-    covariances = gaussians.covariances()
-    colors = gaussians.colors
-    opacities = gaussians.opacities
+    inv_covs = _inverse_covariances(gaussians.covariances())
+    neigh_means = means[idx]
+    d = vertices[:, None, :] - neigh_means
+    inv = inv_covs[idx]
+    quad = np.einsum("vki,vkij,vkj->vk", d, inv, d)
+    weights = gaussians.opacities[idx] * np.exp(-0.5 * quad)
+    neigh_colors = gaussians.colors[idx]
 
-    out = np.zeros((vertices.shape[0], 3), dtype=np.float64)
-    for n in range(vertices.shape[0]):
-        neigh = idx[n]
-        d = vertices[n][None, :] - means[neigh]  # (k, 3)
-        weights = np.empty(k_eff, dtype=np.float64)
-        for j, g in enumerate(neigh):
-            try:
-                inv = np.linalg.inv(covariances[g])
-            except np.linalg.LinAlgError:
-                weights[j] = 0.0
-                continue
-            quad = float(d[j] @ inv @ d[j])
-            weights[j] = opacities[g] * np.exp(-0.5 * quad)
-        total = weights.sum()
-        if total <= 1e-12:
-            out[n] = colors[neigh[0]]
-        else:
-            out[n] = (weights[:, None] * colors[neigh]).sum(axis=0) / total
+    total = weights.sum(axis=1, keepdims=True)
+    fallback = neigh_colors[:, 0]
+    weighted = (weights[..., None] * neigh_colors).sum(axis=1)
+    out = np.where(total > 1e-12, weighted / np.maximum(total, 1e-12), fallback)
 
     rgb = np.clip(out * 255.0 + 0.5, 0, 255).astype(np.uint8)
     alpha = np.full((vertices.shape[0], 1), 255, dtype=np.uint8)
