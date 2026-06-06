@@ -8,7 +8,12 @@ import trimesh
 from .color import transfer_colors
 from .config import ConvertConfig
 from .field import build_density_grid
-from .gaussian import Gaussians, filter_gaussians
+from .gaussian import (
+    Gaussians,
+    filter_gaussians,
+    filter_support_surface,
+    should_filter_support_surface,
+)
 from .io_ply import load_gaussians
 from .postprocess import mesh_component_stats, postprocess
 from .surface import extract_surface
@@ -60,6 +65,8 @@ def convert_to_mesh(
         min_opacity=cfg.min_opacity,
         outlier_std_ratio=cfg.outlier_std,
     )
+    if cfg.filter_support and should_filter_support_surface(gaussians):
+        gaussians = filter_support_surface(gaussians)
     gaussians = _filter_extreme_scales(gaussians, cfg.max_scale_ratio)
 
     grid = build_density_grid(

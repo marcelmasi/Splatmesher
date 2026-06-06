@@ -4,7 +4,7 @@
     "iso": 0.12,
     "sigma_cutoff": 3.0,
     "min_opacity": 0.1,
-    "outlier_std": 2.0,
+    "outlier_std": 0.0,
     "smooth": 10,
     "target_faces": 0,
     "min_face_fraction": 0.02,
