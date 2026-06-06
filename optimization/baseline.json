@@ -1,0 +1,31 @@
+{
+  "config": {
+    "resolution": 128,
+    "iso": 0.12,
+    "sigma_cutoff": 3.0,
+    "min_opacity": 0.1,
+    "outlier_std": 2.0,
+    "smooth": 10,
+    "target_faces": 0,
+    "min_face_fraction": 0.02,
+    "keep_largest_only": true,
+    "robust_bounds": true,
+    "field_blur_sigma": 0.0,
+    "max_scale_ratio": 0.0
+  },
+  "l1_error": 0.1748763658106327,
+  "per_view_l1": {
+    "top": 0.12056761234998703,
+    "left": 0.1656608134508133,
+    "right": 0.10476385056972504,
+    "front": 0.15135535597801208,
+    "back": 0.12049202620983124
+  },
+  "stats": {
+    "num_components": 1,
+    "main_component_fraction": 1.0,
+    "watertight": false,
+    "num_vertices": 71051,
+    "num_faces": 142322
+  }
+}
