@@ -43,8 +43,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--iso",
         type=float,
-        default=0.10,
-        help="Iso-level as a fraction of the field maximum, in (0, 1).",
+        default=0.04,
+        help="Solid-shell density threshold as a fraction of the field max.",
     )
     p.add_argument(
         "--sigma-cutoff",
@@ -95,8 +95,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--field-blur",
         type=float,
-        default=0.0,
-        help="Gaussian blur sigma (voxels) on the density field before MC.",
+        default=1.5,
+        help="Blur sigma (voxels) on the density field before solid extraction.",
     )
     p.add_argument(
         "--max-scale-ratio",
@@ -107,8 +107,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--morph-close",
         type=int,
-        default=0,
-        help="Morphological closing iterations on the density field (0 disables).",
+        default=2,
+        help="Closing iterations on the occupancy mask before hole fill.",
     )
     p.add_argument(
         "--no-support-filter",

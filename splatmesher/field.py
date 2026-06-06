@@ -50,8 +50,6 @@ def build_density_grid(
     sigma_cutoff: float = 3.0,
     padding_voxels: int = 3,
     robust_bounds: bool = False,
-    blur_sigma: float = 0.0,
-    morph_close_iters: int = 0,
 ) -> DensityGrid:
     """Sample the Gaussian density field onto a voxel grid.
 
@@ -65,10 +63,6 @@ def build_density_grid(
             extracted surface is not clipped at the grid boundary.
         robust_bounds: If True, use the 1st–99th percentile of Gaussian centers
             for the bounding box instead of min/max (ignores floaters).
-        blur_sigma: Standard deviation (in voxels) of an isotropic Gaussian blur
-            applied to the accumulated field before returning (0 disables).
-        morph_close_iters: Number of binary closing iterations applied to a
-            coarse density mask to bridge small gaps before returning (0 disables).
 
     Returns:
         A :class:`DensityGrid` holding the accumulated field.
@@ -131,22 +125,5 @@ def build_density_grid(
             lo_idx[1] : hi_idx[1] + 1,
             lo_idx[2] : hi_idx[2] + 1,
         ] += contrib.astype(np.float32)
-
-    if blur_sigma > 0.0:
-        from scipy.ndimage import gaussian_filter
-
-        grid = gaussian_filter(grid, sigma=blur_sigma).astype(np.float32)
-
-    if morph_close_iters > 0:
-        from scipy.ndimage import binary_closing, generate_binary_structure
-
-        peak = float(grid.max())
-        if peak > 0.0:
-            mask = grid > (0.08 * peak)
-            struct = generate_binary_structure(3, 1)
-            closed = binary_closing(mask, structure=struct, iterations=morph_close_iters)
-            # Lift density inside the closed envelope to connect thin gaps.
-            bridge = closed.astype(np.float32) * (0.06 * peak)
-            grid = np.maximum(grid, bridge)
 
     return DensityGrid(values=grid, origin=origin, voxel_size=float(voxel_size))

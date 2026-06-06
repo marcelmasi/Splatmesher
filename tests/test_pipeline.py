@@ -18,7 +18,17 @@ def test_convert_produces_valid_obj(tmp_path) -> None:
     """Convert an example splat at low resolution and validate the OBJ output."""
     out_path = str(tmp_path / "out.obj")
     args = cli.parse_args(
-        [EXAMPLE_PLY, out_path, "--resolution", "80", "--quiet"]
+        [
+            EXAMPLE_PLY,
+            out_path,
+            "--resolution",
+            "80",
+            "--field-blur",
+            "0",
+            "--morph-close",
+            "0",
+            "--quiet",
+        ]
     )
     cli.convert(args)
 

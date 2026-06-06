@@ -50,7 +50,7 @@ MUTATION_RANGES: dict[str, tuple[Any, ...]] = {
     "outlier_std": (0.0, 1.0, 1.5, 2.0, 2.5, 3.0),
     "smooth": (0, 3, 5, 8, 10, 15, 20),
     "min_face_fraction": (0.01, 0.02, 0.05, 0.10),
-    "field_blur_sigma": (0.0, 0.5, 1.0, 1.5, 2.0),
+    "field_blur_sigma": (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0),
     "max_scale_ratio": (0.0, 3.0, 5.0, 8.0, 12.0),
     "morph_close_iters": (0, 1, 2, 3),
 }
@@ -153,10 +153,10 @@ def grid_neighbor_configs(base: ConvertConfig) -> list[ConvertConfig]:
     for robust in (True, False):
         if robust != base.robust_bounds:
             neighbors.append(tweak(robust_bounds=robust))
-    for blur in (0.0, 0.5, 1.0, 1.5):
+    for blur in (0.0, 0.5, 1.0, 1.5, 2.0, 2.5):
         if blur != base.field_blur_sigma:
             neighbors.append(tweak(field_blur_sigma=blur))
-    for close in (0, 1, 2, 3):
+    for close in (0, 1, 2, 3, 4):
         if close != base.morph_close_iters:
             neighbors.append(tweak(morph_close_iters=close))
 
