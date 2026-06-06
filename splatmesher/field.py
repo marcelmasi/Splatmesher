@@ -49,6 +49,8 @@ def build_density_grid(
     resolution: int = 256,
     sigma_cutoff: float = 3.0,
     padding_voxels: int = 3,
+    robust_bounds: bool = False,
+    blur_sigma: float = 0.0,
 ) -> DensityGrid:
     """Sample the Gaussian density field onto a voxel grid.
 
@@ -60,11 +62,19 @@ def build_density_grid(
             larger captures more of each tail at higher cost.
         padding_voxels: Extra voxels of empty margin added on every side so the
             extracted surface is not clipped at the grid boundary.
+        robust_bounds: If True, use the 1st–99th percentile of Gaussian centers
+            for the bounding box instead of min/max (ignores floaters).
+        blur_sigma: Standard deviation (in voxels) of an isotropic Gaussian blur
+            applied to the accumulated field before returning (0 disables).
 
     Returns:
         A :class:`DensityGrid` holding the accumulated field.
     """
-    lo, hi = gaussians.bounds()
+    if robust_bounds:
+        lo = np.percentile(gaussians.means, 1.0, axis=0)
+        hi = np.percentile(gaussians.means, 99.0, axis=0)
+    else:
+        lo, hi = gaussians.bounds()
     extent = hi - lo
     longest = float(np.max(extent))
     voxel_size = longest / max(resolution - 1, 1)
@@ -118,5 +128,10 @@ def build_density_grid(
             lo_idx[1] : hi_idx[1] + 1,
             lo_idx[2] : hi_idx[2] + 1,
         ] += contrib.astype(np.float32)
+
+    if blur_sigma > 0.0:
+        from scipy.ndimage import gaussian_filter
+
+        grid = gaussian_filter(grid, sigma=blur_sigma).astype(np.float32)
 
     return DensityGrid(values=grid, origin=origin, voxel_size=float(voxel_size))

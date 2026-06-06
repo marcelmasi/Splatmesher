@@ -222,6 +222,7 @@ Examples/
 
 # Debug renderings
 debug_renders/
+optimization/log.jsonl
 
 # Apple files
 .DS_Store

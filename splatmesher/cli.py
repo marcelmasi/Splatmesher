@@ -17,13 +17,9 @@ from __future__ import annotations
 import argparse
 import time
 
-from splatmesher.color import transfer_colors
+from splatmesher.config import ConvertConfig
 from splatmesher.export import export_obj
-from splatmesher.field import build_density_grid
-from splatmesher.gaussian import filter_gaussians
-from splatmesher.io_ply import load_gaussians
-from splatmesher.postprocess import postprocess
-from splatmesher.surface import extract_surface
+from splatmesher.pipeline import convert_to_mesh
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -81,6 +77,34 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Decimate to this many faces (0 disables).",
     )
     p.add_argument(
+        "--min-face-fraction",
+        type=float,
+        default=0.02,
+        help="Discard connected components smaller than this face fraction.",
+    )
+    p.add_argument(
+        "--keep-largest-only",
+        action="store_true",
+        help="Keep only the largest connected mesh component.",
+    )
+    p.add_argument(
+        "--robust-bounds",
+        action="store_true",
+        help="Use percentile bounds for the voxel grid (ignores floaters).",
+    )
+    p.add_argument(
+        "--field-blur",
+        type=float,
+        default=0.0,
+        help="Gaussian blur sigma (voxels) on the density field before MC.",
+    )
+    p.add_argument(
+        "--max-scale-ratio",
+        type=float,
+        default=0.0,
+        help="Drop Gaussians with axis scale above median * ratio (0 disables).",
+    )
+    p.add_argument(
         "--no-color",
         action="store_true",
         help="Skip per-vertex color transfer.",
@@ -91,6 +115,31 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Suppress progress output.",
     )
     return p.parse_args(argv)
+
+
+def args_to_config(args: argparse.Namespace) -> ConvertConfig:
+    """Build a :class:`ConvertConfig` from parsed CLI arguments.
+
+    Args:
+        args: Namespace returned by :func:`parse_args`.
+
+    Returns:
+        Equivalent :class:`ConvertConfig`.
+    """
+    return ConvertConfig(
+        resolution=args.resolution,
+        iso=args.iso,
+        sigma_cutoff=args.sigma_cutoff,
+        min_opacity=args.min_opacity,
+        outlier_std=args.outlier_std,
+        smooth=args.smooth,
+        target_faces=args.target_faces,
+        min_face_fraction=args.min_face_fraction,
+        keep_largest_only=args.keep_largest_only,
+        robust_bounds=args.robust_bounds,
+        field_blur_sigma=args.field_blur,
+        max_scale_ratio=args.max_scale_ratio,
+    )
 
 
 def convert(args: argparse.Namespace) -> None:
@@ -115,45 +164,12 @@ def convert(args: argparse.Namespace) -> None:
         if not args.quiet:
             print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
-    log(f"Loading {args.input}")
-    gaussians = load_gaussians(args.input)
-    log(f"  {len(gaussians)} Gaussians loaded")
-
-    gaussians = filter_gaussians(
-        gaussians,
-        min_opacity=args.min_opacity,
-        outlier_std_ratio=args.outlier_std,
-    )
-    log(f"  {len(gaussians)} Gaussians after cleanup")
-
-    log(f"Building density grid (resolution={args.resolution})")
-    grid = build_density_grid(
-        gaussians,
-        resolution=args.resolution,
-        sigma_cutoff=args.sigma_cutoff,
-    )
-    log(f"  grid {grid.values.shape}, voxel size {grid.voxel_size:.5f}")
-
-    log(f"Extracting surface (iso={args.iso})")
-    verts, faces = extract_surface(grid, iso_relative=args.iso)
-    log(f"  raw mesh: {len(verts)} verts, {len(faces)} faces")
-
-    log("Post-processing mesh")
-    mesh = postprocess(
-        verts,
-        faces,
-        smooth_iterations=args.smooth,
-        target_faces=args.target_faces,
-    )
-    log(f"  final mesh: {len(mesh.vertices)} verts, {len(mesh.faces)} faces")
-
-    colors = None
-    if not args.no_color:
-        log("Transferring colors")
-        colors = transfer_colors(mesh.vertices, gaussians)
-
+    cfg = args_to_config(args)
+    log(f"Converting {args.input}")
+    mesh = convert_to_mesh(args.input, config=cfg, with_colors=not args.no_color)
+    log(f"  mesh: {len(mesh.vertices)} verts, {len(mesh.faces)} faces")
     log(f"Writing {args.output}")
-    export_obj(mesh, args.output, vertex_colors=colors)
+    export_obj(mesh, args.output)
     log("Done.")
 
 

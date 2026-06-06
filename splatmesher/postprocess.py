@@ -2,13 +2,51 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 import trimesh
+
+
+@dataclass
+class ComponentStats:
+    """Connected-component statistics for a triangle mesh.
+
+    Attributes:
+        num_components: Number of disconnected mesh pieces.
+        main_component_fraction: Fraction of faces belonging to the largest piece.
+        face_counts: Face count per component, largest first.
+    """
+
+    num_components: int
+    main_component_fraction: float
+    face_counts: list[int]
+
+
+def mesh_component_stats(mesh: trimesh.Trimesh) -> ComponentStats:
+    """Measure how fragmented a mesh is.
+
+    Args:
+        mesh: Input mesh to analyze.
+
+    Returns:
+        :class:`ComponentStats` describing connected components.
+    """
+    components = mesh.split(only_watertight=False)
+    face_counts = sorted((len(c.faces) for c in components), reverse=True)
+    total = max(sum(face_counts), 1)
+    main_frac = face_counts[0] / total if face_counts else 0.0
+    return ComponentStats(
+        num_components=len(components),
+        main_component_fraction=float(main_frac),
+        face_counts=face_counts,
+    )
 
 
 def keep_largest_components(
     mesh: trimesh.Trimesh,
     min_face_fraction: float = 0.02,
+    keep_largest_only: bool = False,
 ) -> trimesh.Trimesh:
     """Drop small disconnected islands, keeping the significant components.
 
@@ -16,6 +54,7 @@ def keep_largest_components(
         mesh: Input mesh, possibly with many disconnected pieces (e.g. floaters).
         min_face_fraction: Components with fewer than this fraction of the total
             face count are discarded. The largest component is always kept.
+        keep_largest_only: If True, discard every component except the largest.
 
     Returns:
         A mesh containing only the retained components (concatenated).
@@ -23,6 +62,9 @@ def keep_largest_components(
     components = mesh.split(only_watertight=False)
     if len(components) <= 1:
         return mesh
+
+    if keep_largest_only:
+        return max(components, key=lambda c: len(c.faces))
 
     total_faces = len(mesh.faces)
     threshold = max(1, int(min_face_fraction * total_faces))
@@ -96,6 +138,7 @@ def postprocess(
     smooth_iterations: int = 10,
     target_faces: int = 0,
     min_face_fraction: float = 0.02,
+    keep_largest_only: bool = False,
 ) -> trimesh.Trimesh:
     """Run the full post-processing chain on a raw marching-cubes mesh.
 
@@ -106,13 +149,18 @@ def postprocess(
         target_faces: Target face count for decimation (0 disables decimation).
         min_face_fraction: Island removal threshold (see
             :func:`keep_largest_components`).
+        keep_largest_only: If True, keep only the largest connected component.
 
     Returns:
         A cleaned, smoothed, optionally decimated and repaired
         :class:`trimesh.Trimesh`.
     """
     mesh = trimesh.Trimesh(vertices=vertices, faces=faces, process=True)
-    mesh = keep_largest_components(mesh, min_face_fraction=min_face_fraction)
+    mesh = keep_largest_components(
+        mesh,
+        min_face_fraction=min_face_fraction,
+        keep_largest_only=keep_largest_only,
+    )
     mesh = smooth_mesh(mesh, iterations=smooth_iterations)
     mesh = decimate_mesh(mesh, target_faces=target_faces)
     mesh = repair_mesh(mesh)
