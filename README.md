@@ -6,6 +6,8 @@ Splatmesher is a conversion tool that takes in a Gaussian Splatting file and cre
 
 You can use, e.g. [Scanniverse](https://www.nianticspatial.com/products/capture) to scan the object and then transform it with Splatmesher.
 
+This tool was vibe coded with Cursor at the Vibe Code Fest 2026 Hackaton.
+
 ## Usage
 
 Create and activate the Python environment once per terminal session:
