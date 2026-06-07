@@ -122,6 +122,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Skip automatic removal of flat table/support surface splats.",
     )
     p.add_argument(
+        "--no-haze-filter",
+        action="store_true",
+        help="Skip removal of grey, sparse haze splats (floating clouds).",
+    )
+    p.add_argument(
         "--no-color",
         action="store_true",
         help="Skip per-vertex color transfer.",
@@ -159,6 +164,7 @@ def args_to_config(args: argparse.Namespace) -> ConvertConfig:
         morph_close_iters=args.morph_close,
         shell_smooth_sigma=args.shell_smooth,
         filter_support=not args.no_support_filter,
+        filter_haze=not args.no_haze_filter,
     )
 
 

@@ -168,6 +168,61 @@ def filter_gaussians(
     return g
 
 
+def filter_haze(
+    gaussians: Gaussians,
+    opacity_threshold: float = 0.4,
+    sparse_ratio: float = 0.5,
+    neighbor_radius_frac: float = 0.03,
+) -> Gaussians:
+    """Remove semi-transparent, sparsely-distributed "haze" splats.
+
+    Gaussian Splatting scans often contain faint floating clouds/fog and loose
+    fragments of nearby surfaces (e.g. the table the object rests on). These are
+    not part of the object surface but get baked into the density field and
+    produce cloud-like blobs in the mesh. Haze splats are identified by two
+    physical traits at once, deliberately ignoring colour (which depends on the
+    scene, e.g. a grey table): they are relatively transparent (low opacity) and
+    they sit in spatially sparse regions (few nearby neighbours). Requiring both
+    traits protects thin-but-solid parts of the object (e.g. a stem), whose
+    splats are sparse but opaque, and dense translucent material, whose splats
+    are transparent but tightly packed.
+
+    Args:
+        gaussians: Input Gaussians after opacity/outlier/support filtering.
+        opacity_threshold: Splats with opacity below this are treated as
+            transparent (candidates for removal), in [0, 1].
+        sparse_ratio: A splat counts as sparse if its local neighbour count is
+            below this fraction of the median neighbour count over all splats.
+        neighbor_radius_frac: Radius for the local neighbour count, expressed as
+            a fraction of the bounding-box diagonal (world units).
+
+    Returns:
+        Filtered :class:`Gaussians` with transparent-and-sparse haze splats removed.
+    """
+    if len(gaussians) == 0:
+        return gaussians
+
+    from scipy.spatial import cKDTree
+
+    pts = gaussians.means
+    diag = float(np.linalg.norm(pts.max(axis=0) - pts.min(axis=0)))
+    if diag <= 0.0:
+        return gaussians
+    radius = neighbor_radius_frac * diag
+    tree = cKDTree(pts)
+    counts = np.asarray(
+        tree.query_ball_point(pts, radius, return_length=True), dtype=float
+    )
+    median_count = float(np.median(counts))
+    if median_count <= 0.0:
+        return gaussians
+
+    transparent = gaussians.opacities < opacity_threshold
+    sparse = counts < sparse_ratio * median_count
+    haze = transparent & sparse
+    return gaussians.select(~haze)
+
+
 def filter_support_surface(
     gaussians: Gaussians,
     flat_aniso_threshold: float = 0.15,

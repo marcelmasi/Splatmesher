@@ -34,6 +34,8 @@ class ConvertConfig:
             extracted shell (0 disables, leaving a terraced surface).
         filter_support: If True, automatically remove flat table/support surface
             splats when detected in the scan.
+        filter_haze: If True, remove desaturated, spatially sparse "haze" splats
+            (floating cloud-like background noise) before meshing.
     """
 
     resolution: int = 160
@@ -51,6 +53,7 @@ class ConvertConfig:
     morph_close_iters: int = 2
     shell_smooth_sigma: float = 1.5
     filter_support: bool = True
+    filter_haze: bool = True
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize the config to a plain dictionary.

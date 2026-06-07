@@ -11,6 +11,7 @@ from .field import build_density_grid
 from .gaussian import (
     Gaussians,
     filter_gaussians,
+    filter_haze,
     filter_support_surface,
     should_filter_support_surface,
 )
@@ -67,6 +68,8 @@ def convert_to_mesh(
     )
     if cfg.filter_support and should_filter_support_surface(gaussians):
         gaussians = filter_support_surface(gaussians)
+    if cfg.filter_haze:
+        gaussians = filter_haze(gaussians)
     gaussians = _filter_extreme_scales(gaussians, cfg.max_scale_ratio)
 
     grid = build_density_grid(
