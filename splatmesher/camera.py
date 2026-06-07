@@ -129,7 +129,7 @@ def fixed_viewpoints(
     fov_y_deg: float = 45.0,
     margin: float = 1.3,
 ) -> dict[str, Camera]:
-    """Create the five fixed evaluation cameras around an object.
+    """Create the six fixed evaluation cameras around an object.
 
     Cameras are placed on the +/- world axes looking at ``center`` from a
     distance chosen so the bounding sphere of radius ``radius`` fits in view.
@@ -143,8 +143,8 @@ def fixed_viewpoints(
         margin: Multiplicative slack so the object does not touch the borders.
 
     Returns:
-        Dict mapping view name (``top``, ``left``, ``right``, ``front``,
-        ``back``) to a :class:`Camera`.
+        Dict mapping view name (``top``, ``bottom``, ``left``, ``right``,
+        ``front``, ``back``) to a :class:`Camera`.
     """
     center = np.asarray(center, dtype=np.float64)
     radius = max(float(radius), 1e-6)
@@ -152,12 +152,14 @@ def fixed_viewpoints(
 
     y_up = np.array([0.0, 1.0, 0.0])
     z_up = np.array([0.0, 0.0, -1.0])
+    z_down = np.array([0.0, 0.0, 1.0])
     specs = {
         "front": (np.array([0.0, 0.0, -1.0]), y_up),
         "back": (np.array([0.0, 0.0, 1.0]), y_up),
         "left": (np.array([-1.0, 0.0, 0.0]), y_up),
         "right": (np.array([1.0, 0.0, 0.0]), y_up),
         "top": (np.array([0.0, 1.0, 0.0]), z_up),
+        "bottom": (np.array([0.0, -1.0, 0.0]), z_down),
     }
 
     cams: dict[str, Camera] = {}

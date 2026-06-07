@@ -16,7 +16,7 @@ from .pipeline import convert_stats, convert_to_mesh
 from .render_mesh import render_mesh
 from .render_splats import render_gaussians
 
-VIEW_NAMES = ("top", "left", "right", "front", "back")
+VIEW_NAMES = ("top", "bottom", "left", "right", "front", "back")
 
 
 @dataclass
