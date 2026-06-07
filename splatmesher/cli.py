@@ -111,6 +111,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Closing iterations on the occupancy mask before hole fill.",
     )
     p.add_argument(
+        "--shell-smooth",
+        type=float,
+        default=1.5,
+        help="Blur sigma (voxels) on the solid volume to remove MC terracing.",
+    )
+    p.add_argument(
         "--no-support-filter",
         action="store_true",
         help="Skip automatic removal of flat table/support surface splats.",
@@ -151,6 +157,7 @@ def args_to_config(args: argparse.Namespace) -> ConvertConfig:
         field_blur_sigma=args.field_blur,
         max_scale_ratio=args.max_scale_ratio,
         morph_close_iters=args.morph_close,
+        shell_smooth_sigma=args.shell_smooth,
         filter_support=not args.no_support_filter,
     )
 

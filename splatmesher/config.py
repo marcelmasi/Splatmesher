@@ -29,6 +29,9 @@ class ConvertConfig:
             of the median scale (0 disables).
         morph_close_iters: Morphological closing iterations on the occupancy mask
             before hole filling; bridges narrow gaps between splats (0 disables).
+        shell_smooth_sigma: Gaussian blur sigma (in voxels) applied to the binary
+            solid volume before marching cubes; removes terracing ripples on the
+            extracted shell (0 disables, leaving a terraced surface).
         filter_support: If True, automatically remove flat table/support surface
             splats when detected in the scan.
     """
@@ -46,6 +49,7 @@ class ConvertConfig:
     field_blur_sigma: float = 1.5
     max_scale_ratio: float = 0.0
     morph_close_iters: int = 2
+    shell_smooth_sigma: float = 1.5
     filter_support: bool = True
 
     def to_dict(self) -> dict[str, Any]:

@@ -80,6 +80,7 @@ def convert_to_mesh(
         iso_relative=cfg.iso,
         pre_blur_sigma=cfg.field_blur_sigma,
         close_iters=cfg.morph_close_iters,
+        shell_smooth_sigma=cfg.shell_smooth_sigma,
     )
     mesh = postprocess(
         verts,

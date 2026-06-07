@@ -53,6 +53,7 @@ MUTATION_RANGES: dict[str, tuple[Any, ...]] = {
     "field_blur_sigma": (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0),
     "max_scale_ratio": (0.0, 3.0, 5.0, 8.0, 12.0),
     "morph_close_iters": (0, 1, 2, 3),
+    "shell_smooth_sigma": (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0),
 }
 
 BOOL_FIELDS = ("keep_largest_only", "robust_bounds")
@@ -159,6 +160,9 @@ def grid_neighbor_configs(base: ConvertConfig) -> list[ConvertConfig]:
     for close in (0, 1, 2, 3, 4):
         if close != base.morph_close_iters:
             neighbors.append(tweak(morph_close_iters=close))
+    for shell in (0.0, 0.5, 1.0, 1.5, 2.0, 2.5):
+        if shell != base.shell_smooth_sigma:
+            neighbors.append(tweak(shell_smooth_sigma=shell))
 
     return neighbors
 
