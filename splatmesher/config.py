@@ -48,10 +48,10 @@ class ConvertConfig:
     min_face_fraction: float = 0.02
     keep_largest_only: bool = False
     robust_bounds: bool = False
-    field_blur_sigma: float = 1.5
+    field_blur_sigma: float = 1.3
     max_scale_ratio: float = 0.0
-    morph_close_iters: int = 2
-    shell_smooth_sigma: float = 1.5
+    morph_close_iters: int = 4
+    shell_smooth_sigma: float = 1.0
     filter_support: bool = True
     filter_haze: bool = True
 

@@ -95,7 +95,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--field-blur",
         type=float,
-        default=1.5,
+        default=1.3,
         help="Blur sigma (voxels) on the density field before solid extraction.",
     )
     p.add_argument(
@@ -107,13 +107,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--morph-close",
         type=int,
-        default=2,
+        default=4,
         help="Closing iterations on the occupancy mask before hole fill.",
     )
     p.add_argument(
         "--shell-smooth",
         type=float,
-        default=1.5,
+        default=1.0,
         help="Blur sigma (voxels) on the solid volume to remove MC terracing.",
     )
     p.add_argument(
