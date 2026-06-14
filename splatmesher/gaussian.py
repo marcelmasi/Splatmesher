@@ -223,6 +223,57 @@ def filter_haze(
     return gaussians.select(~haze)
 
 
+def filter_low_density(
+    gaussians: Gaussians,
+    radius_frac: float = 0.02,
+    min_density_ratio: float = 0.12,
+) -> Gaussians:
+    """Remove splats sitting in low summed-overlap-density regions (fog/floaters).
+
+    The real object surface is where many Gaussians overlap, so the locally
+    summed, opacity-weighted density is high. Foggy artifacts and floaters are
+    sparse and faint, so their summed density is low. For each splat this
+    estimates the local density as the opacity-weighted sum of nearby splats
+    (an overlap measure that mirrors how the volumetric field accumulates
+    ``opacity * exp(...)``), and discards splats whose density falls below a
+    fraction of the median. Unlike :func:`filter_haze` this keys purely on the
+    summed density (overlap), so it also removes faint-but-isolated material the
+    haze filter misses, while keeping dense surface splats regardless of opacity.
+
+    Args:
+        gaussians: Input Gaussians after opacity/outlier/support/haze filtering.
+        radius_frac: Neighbourhood radius for the local density estimate,
+            expressed as a fraction of the bounding-box diagonal (world units).
+        min_density_ratio: A splat is dropped if its local density is below this
+            fraction of the median local density over all splats. Larger values
+            remove more (and risk eating thin real structure); 0 disables.
+
+    Returns:
+        Filtered :class:`Gaussians` with low-density (foggy) splats removed.
+    """
+    if len(gaussians) == 0 or min_density_ratio <= 0.0:
+        return gaussians
+
+    from scipy.spatial import cKDTree
+
+    pts = gaussians.means
+    diag = float(np.linalg.norm(pts.max(axis=0) - pts.min(axis=0)))
+    if diag <= 0.0:
+        return gaussians
+    radius = radius_frac * diag
+    tree = cKDTree(pts)
+    # Opacity-weighted overlap: count nearby splats weighted by their opacity.
+    neighbors = tree.query_ball_point(pts, radius)
+    opac = gaussians.opacities
+    density = np.array([float(opac[idx].sum()) for idx in neighbors], dtype=float)
+
+    median_density = float(np.median(density))
+    if median_density <= 0.0:
+        return gaussians
+    keep = density >= min_density_ratio * median_density
+    return gaussians.select(keep)
+
+
 def filter_support_surface(
     gaussians: Gaussians,
     flat_aniso_threshold: float = 0.15,

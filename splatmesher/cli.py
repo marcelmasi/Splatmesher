@@ -127,6 +127,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Skip removal of grey, sparse haze splats (floating clouds).",
     )
     p.add_argument(
+        "--no-density-filter",
+        action="store_true",
+        help="Skip removal of low summed-overlap-density splats (fog/floaters).",
+    )
+    p.add_argument(
+        "--density-min-ratio",
+        type=float,
+        default=0.12,
+        help="Drop splats below this fraction of the median overlap density.",
+    )
+    p.add_argument(
+        "--detail",
+        action="store_true",
+        help=(
+            "Detail-first preset: higher iso + minimal closing to keep fine "
+            "detail and separate touching parts (may not be fully watertight)."
+        ),
+    )
+    p.add_argument(
         "--no-color",
         action="store_true",
         help="Skip per-vertex color transfer.",
@@ -148,9 +167,21 @@ def args_to_config(args: argparse.Namespace) -> ConvertConfig:
     Returns:
         Equivalent :class:`ConvertConfig`.
     """
+    iso = args.iso
+    morph_close = args.morph_close
+    field_blur = args.field_blur
+    shell_smooth = args.shell_smooth
+    if args.detail:
+        # Detail-first: require real Gaussian overlap (rejects fog ballooning)
+        # and stop bridging real gaps/coarsening. Trades watertightness for
+        # fidelity on thin, complex or touching geometry.
+        iso = 0.10
+        morph_close = 1
+        field_blur = 1.0
+        shell_smooth = 0.8
     return ConvertConfig(
         resolution=args.resolution,
-        iso=args.iso,
+        iso=iso,
         sigma_cutoff=args.sigma_cutoff,
         min_opacity=args.min_opacity,
         outlier_std=args.outlier_std,
@@ -159,12 +190,14 @@ def args_to_config(args: argparse.Namespace) -> ConvertConfig:
         min_face_fraction=args.min_face_fraction,
         keep_largest_only=args.keep_largest_only,
         robust_bounds=args.robust_bounds,
-        field_blur_sigma=args.field_blur,
+        field_blur_sigma=field_blur,
         max_scale_ratio=args.max_scale_ratio,
-        morph_close_iters=args.morph_close,
-        shell_smooth_sigma=args.shell_smooth,
+        morph_close_iters=morph_close,
+        shell_smooth_sigma=shell_smooth,
         filter_support=not args.no_support_filter,
         filter_haze=not args.no_haze_filter,
+        filter_density=not args.no_density_filter,
+        density_min_ratio=args.density_min_ratio,
     )
 
 

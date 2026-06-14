@@ -36,6 +36,10 @@ class ConvertConfig:
             splats when detected in the scan.
         filter_haze: If True, remove desaturated, spatially sparse "haze" splats
             (floating cloud-like background noise) before meshing.
+        filter_density: If True, remove splats in low summed-overlap-density
+            regions (fog/floaters) before meshing, keeping high-overlap surface.
+        density_min_ratio: Drop splats whose local opacity-weighted overlap
+            density is below this fraction of the median (0 disables).
     """
 
     resolution: int = 160
@@ -54,6 +58,8 @@ class ConvertConfig:
     shell_smooth_sigma: float = 1.0
     filter_support: bool = True
     filter_haze: bool = True
+    filter_density: bool = True
+    density_min_ratio: float = 0.12
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize the config to a plain dictionary.

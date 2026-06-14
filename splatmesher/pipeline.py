@@ -12,6 +12,7 @@ from .gaussian import (
     Gaussians,
     filter_gaussians,
     filter_haze,
+    filter_low_density,
     filter_support_surface,
     should_filter_support_surface,
 )
@@ -70,6 +71,10 @@ def convert_to_mesh(
         gaussians = filter_support_surface(gaussians)
     if cfg.filter_haze:
         gaussians = filter_haze(gaussians)
+    if cfg.filter_density:
+        gaussians = filter_low_density(
+            gaussians, min_density_ratio=cfg.density_min_ratio
+        )
     gaussians = _filter_extreme_scales(gaussians, cfg.max_scale_ratio)
 
     grid = build_density_grid(
